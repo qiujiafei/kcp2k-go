@@ -5,15 +5,16 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
-	"github.com/0990/kcp-go"
-	"github.com/pkg/errors"
-	"golang.org/x/net/ipv4"
 	"io"
 	"log/slog"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/0990/kcp-go"
+	"github.com/pkg/errors"
+	"golang.org/x/net/ipv4"
 )
 
 type Kcp2kState byte
@@ -127,7 +128,6 @@ func newSession(cookie []byte, l *Listener, conn net.PacketConn, ownConn bool, a
 	s.chUnReliableReadMsg = make(chan []byte, 10)
 	s.chReliableReadMsg = make(chan []byte, 10)
 	s.chTxQueue = make(chan ipv4.Message, 10)
-
 	if s.l == nil {
 		go s.readLoop()
 	}
@@ -184,6 +184,7 @@ func (c *Session) SetKcpSession(sess *kcp.UDPSession) bool {
 		return false
 	}
 	c.kcpSess = sess
+	c.kcpSess.SetMtu(1400)
 	c.setKCPSessionEventOnce.Do(func() {
 		close(c.chAcceptKCPEvent)
 	})
