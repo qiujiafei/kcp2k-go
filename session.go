@@ -142,6 +142,10 @@ func (s *Session) SetState(state Kcp2kState) {
 	s.state = state
 }
 
+func (s *Session) SetStreamMode() {
+	s.kcpSess.SetStreamMode(true)
+}
+
 // 握手并接受数据
 func (s *Session) Run() error {
 	//握手
@@ -184,7 +188,7 @@ func (c *Session) SetKcpSession(sess *kcp.UDPSession) bool {
 		return false
 	}
 	c.kcpSess = sess
-	c.kcpSess.SetMtu(1400)
+	c.kcpSess.SetMtu(1400 - 5)
 	c.setKCPSessionEventOnce.Do(func() {
 		close(c.chAcceptKCPEvent)
 	})
@@ -217,6 +221,7 @@ func (s *Session) Close() {
 		defer s.mu.Unlock()
 
 		if s.kcpSess != nil {
+			_, _ = s.Send([]byte{byte(Disconnect + 1)}, Unreliable)
 			s.kcpSess.Close()
 		}
 		if s.l != nil {
