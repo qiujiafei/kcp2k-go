@@ -146,6 +146,10 @@ func (s *Session) SetStreamMode() {
 	s.kcpSess.SetStreamMode(true)
 }
 
+func (s *Session) GetKcpMss() uint32 {
+	return s.kcpSess.GetKcpMss()
+}
+
 // 握手并接受数据
 func (s *Session) Run() error {
 	//握手

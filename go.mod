@@ -3,7 +3,7 @@ module github.com/0990/kcp2k-go
 go 1.21.0
 
 require (
-	github.com/0990/kcp-go v0.0.0-00010101000000-000000000000
+	github.com/0990/kcp-go v0.0.0
 	github.com/pkg/errors v0.9.1
 	golang.org/x/net v0.23.0
 )
@@ -18,4 +18,4 @@ require (
 	golang.org/x/sys v0.18.0 // indirect
 )
 
-replace github.com/0990/kcp-go => ../kcp-go
+replace github.com/0990/kcp-go v0.0.0 => ../kcp-go
