@@ -213,7 +213,7 @@ func (s *Session) WaitAcceptKCP(cb func(error)) {
 	}()
 }
 
-func (s *Session) Close() {
+func (s *Session) Close() error {
 	var once bool
 	s.dieOnce.Do(func() {
 		close(s.die)
@@ -232,6 +232,7 @@ func (s *Session) Close() {
 			s.l.sessions.Delete(s.remote.String())
 		}
 	}
+	return nil
 }
 
 func (s *Session) CheckCookie(cookie []byte) error {
@@ -261,7 +262,7 @@ func (s *Session) onRawInputUnreliable(data []byte) {
 	}
 }
 
-func (s *Session) Read(b []byte) (n int, channel Channel, err error) {
+func (s *Session) Read(b []byte) (n int, err error) {
 	var timeout *time.Timer
 	// deadline for current reading operation
 	var c <-chan time.Time
@@ -278,7 +279,7 @@ func (s *Session) Read(b []byte) (n int, channel Channel, err error) {
 			n = copy(b, s.bufptr)
 			s.bufptr = s.bufptr[n:]
 			s.mu.Unlock()
-			return n, Reliable, nil
+			return n, nil
 		}
 		s.mu.Unlock()
 
@@ -288,19 +289,19 @@ func (s *Session) Read(b []byte) (n int, channel Channel, err error) {
 			n = copy(b, data)   // copy to 'b'
 			s.bufptr = data[n:] // pointer update
 			s.mu.Unlock()
-			return n, Reliable, nil
+			return n, nil
 		case msg := <-s.chUnReliableReadMsg:
 			if len(msg) > len(b) {
-				return 0, Invalid, errors.New("buffer too small")
+				return 0, errors.New("buffer too small")
 			}
 			n = copy(b, msg)
-			return n, Unreliable, nil
+			return n, errUnReliableMsg
 		case <-c:
-			return 0, Invalid, errors.WithStack(errTimeout)
+			return 0, errors.WithStack(errTimeout)
 		case <-s.chSocketReadError:
-			return 0, Invalid, s.socketReadError.Load().(error)
+			return 0, s.socketReadError.Load().(error)
 		case <-s.die:
-			return 0, Invalid, errors.WithStack(io.ErrClosedPipe)
+			return 0, errors.WithStack(io.ErrClosedPipe)
 		}
 	}
 }
@@ -347,6 +348,10 @@ func (s *Session) handleKCPRawData(rawData []byte) error {
 		s.Close()
 		return errors.WithStack(io.ErrClosedPipe)
 	}
+}
+
+func (s *Session) Write(b []byte) (n int, err error) {
+	return s.sendReliable(Data, b)
 }
 
 func (s *Session) Send(data []byte, channel Channel) (int, error) {
@@ -402,4 +407,20 @@ func (s *Session) notifyWriteError(err error) {
 		s.socketWriteError.Store(err)
 		close(s.chSocketWriteError)
 	})
+}
+
+func (s *Session) LocalAddr() net.Addr {
+	return s.kcpSess.LocalAddr()
+}
+
+func (s *Session) SetDeadline(t time.Time) error {
+	return nil
+}
+
+func (s *Session) SetReadDeadline(t time.Time) error {
+	return nil
+}
+
+func (s *Session) SetWriteDeadline(t time.Time) error {
+	return nil
 }

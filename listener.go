@@ -1,9 +1,6 @@
 package kcp2k
 
 import (
-	"github.com/0990/kcp-go"
-	"github.com/0990/kcp2k-go/pkg/syncx"
-	"github.com/pkg/errors"
 	"io"
 	"log"
 	"log/slog"
@@ -11,6 +8,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/0990/kcp-go"
+	"github.com/0990/kcp2k-go/pkg/syncx"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -121,7 +122,7 @@ func ReadPacket(session *kcp.UDPSession) ([]byte, error) {
 	return session.ReadPacket()
 }
 
-func (l *Listener) Accept() (*Session, error) {
+func (l *Listener) Accept() (net.Conn, error) {
 	var timeout <-chan time.Time
 	if tdeadline, ok := l.rd.Load().(time.Time); ok && !tdeadline.IsZero() {
 		timeout = time.After(time.Until(tdeadline))
@@ -137,6 +138,14 @@ func (l *Listener) Accept() (*Session, error) {
 	case <-l.die:
 		return nil, errors.WithStack(io.ErrClosedPipe)
 	}
+}
+
+func (l *Listener) Close() error {
+	return nil
+}
+
+func (l *Listener) Addr() net.Addr {
+	return l.conn.LocalAddr()
 }
 
 func (l *Listener) notifyReadError(err error) {

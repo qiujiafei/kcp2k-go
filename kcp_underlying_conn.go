@@ -1,16 +1,18 @@
 package kcp2k
 
 import (
-	"github.com/pkg/errors"
 	"net"
 	"sync"
 	"sync/atomic"
+
+	"github.com/pkg/errors"
 )
 
 var (
 	errInvalidOperation = errors.New("invalid operation")
 	errTimeout          = errors.New("timeout")
 	errBufferSmall      = errors.New("buffsmall")
+	errUnReliableMsg    = errors.New("unreliable message")
 )
 
 const (
